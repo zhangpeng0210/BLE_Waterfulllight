@@ -8,11 +8,14 @@ import { dpUtils, actions } from '@/redux/index';
 import { store } from '@/redux';
 import { setNavigationBarTitle } from '@ray-js/api';
 import { TYSdk } from '@ray-js/ray-panel-core';
-import { publishGroupDps } from '@ray-js/ray';
+import { publishGroupDps, usePageEvent } from '@ray-js/ray';
 
 import './countdown.module.less';
 
 const CountDownView = () => {
+  usePageEvent('onLoad', () => {
+    ty.hideMenuButton();
+  });
   const isGroup = !(TYSdk.devInfo.groupId === undefined);
 
   setNavigationBarTitle({

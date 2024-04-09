@@ -53,6 +53,12 @@ export const routes: Routes = [
     path: "/pages/textList/text/index",
     name: "Text",
   },  
+  {
+    route: "/addTimer",
+    path: "/pages/schedule/addTimer/index",
+    name: "AddTimerView",
+  },  
+
 ];
 
 export const tabBar = {};

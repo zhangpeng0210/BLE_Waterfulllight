@@ -252,9 +252,7 @@ const MusicView = () => {
           rectWidth={viewWidth - 40 * 2}
           rectHeight={200}
           thumbRadius={12}
-          containerStyle={{
-            borderRadius: '10px',
-          }}
+          borderRadiusStyle={'30rpx'}
           onTouchEnd={onTouchEnd}
         />
       </View>

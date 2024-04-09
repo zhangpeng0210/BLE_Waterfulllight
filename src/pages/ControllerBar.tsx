@@ -46,7 +46,7 @@ const ControllerBar = (props: Props) => {
 
       {data.map((item, idx) => {
         const isActive = active === idx;
-        const isSetting = idx === 3;
+        const isSetting = item.key === 'other';
         const activeName = isActive ? '#fff' : '#6d6d6e';
         const className = `controller-bar-item ${activeName} ${isSetting ? 'setting-bar' : ''}`;
         return (

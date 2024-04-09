@@ -19,8 +19,13 @@ import {
   onDeviceRemoved,
   exitMiniProgram,
   registerDeviceListListener,
+  onBLEConnectStatusChange,
+  subscribeBLEConnectStatus,
 } from '@ray-js/api';
 import { onGroupDpCodeChange, onGroupDpDataChangeEvent, registerGroupChange } from '@ray-js/ray';
+import { toFixed } from '@ray-js/panel-sdk/lib/utils';
+import { dpUtils } from '@/redux/index';
+import dpCodes from '@/config/dpCodes';
 
 const { parseJSON } = JsonUtils;
 
@@ -111,7 +116,25 @@ const composeLayout = (Comp: React.ComponentType<any>) => {
     });
   }, 10);
 
+  //蓝牙连接成功后同步时间
+  const updateCurrentTimestamp = () => {
+    const timeStamp = Math.round(new Date().getTime() / 1000);
+
+    const byte1 = toFixed(((timeStamp >> 24) & 0xff).toString(16), 2);
+    const byte2 = toFixed(((timeStamp >> 16) & 0xff).toString(16), 2);
+    const byte3 = toFixed(((timeStamp >> 8) & 0xff).toString(16), 2);
+    const byte4 = toFixed((timeStamp & 0xff).toString(16), 2);
+
+    const dpStr = 'aa0504' + byte1 + byte2 + byte3 + byte4 + 'bb';
+    dpUtils.putDpData({
+      [dpCodes.DIY]: dpStr,
+    });
+    console.log('dpStr', dpStr);
+  };
+
   const initThingModel = devId => {
+    updateCurrentTimestamp();
+
     try {
       registerDeviceListListener({
         deviceIdList: [devId],
@@ -136,6 +159,21 @@ const composeLayout = (Comp: React.ComponentType<any>) => {
       },
       fail: () => console.warn('subscribeDeviceRemoved 调用失败'),
     });
+
+    try {
+      //监听蓝牙设备的连接状态
+      subscribeBLEConnectStatus({
+        deviceId: devId,
+        success(params) {
+          console.log('监听蓝牙设备成功');
+          onBLEConnectStatusChange(status => {
+            if (status.status == 'CONNECTED') {
+              updateCurrentTimestamp();
+            }
+          });
+        },
+      });
+    } catch (error) {}
   };
 
   class PanelComponent extends Component<Props, State> {

@@ -130,6 +130,7 @@ export default {
     tips_title_OTA_2: 'Upgrading...',
     tips_content_OTA_2:'Device is upgrading...',
     lookOTA: 'Go to Check',
+    locationTimer_top_tips:'If the controller is re-powered, please connect the device with the  miniAPP in order to synchronize the time.',
 
   },
   zh: {
@@ -259,6 +260,7 @@ export default {
     tips_title_OTA_2: '升级中...',
     tips_content_OTA_2:'设备正在升级中...',
     lookOTA: '查看',
+    locationTimer_top_tips:'如果设备重新上电，定时功能就不能准确执行，需要用app连接设备以便同步时间',
 
   },
 };

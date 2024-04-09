@@ -26,7 +26,8 @@ export const thing = {
     "pages/diyList/smear/index",
     "pages/diyList/index",
     "pages/textList/index",
-    "pages/textList/text/index"
+    "pages/textList/text/index",
+    "pages/schedule/addTimer/index"
   ]
 };
 
