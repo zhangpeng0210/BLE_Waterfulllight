@@ -1,0 +1,39 @@
+@import url("@/common/index.less");
+
+.dimmer-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #212121;
+  padding: 40rpx 32rpx;
+}
+
+.color-disk-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.favorite-color-list {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  height: 140rpx;
+  .color {
+    width: 60rpx;
+    height: 60rpx;
+    background: #ffffff;
+    border-radius: 50%;
+    margin: 0 16rpx;
+    flex-shrink: 0;
+    &.active {
+      border: 4rpx solid #ffffff;
+      width: 68rpx;
+      height: 68rpx;
+    }
+  }
+}
+
+.lamp-slider-wrap {
+  padding: 64rpx 32rpx;
+}

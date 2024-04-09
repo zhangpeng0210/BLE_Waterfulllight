@@ -1,0 +1,9 @@
+<view class="textPixel-wrap">
+  <canvas
+    type="2d"
+    canvas-id="{{canvasId}}"
+    disable-scroll="{{showType === 1}}"
+    style="width: {{width}}px; height: {{height}}px; background-color:#212121"
+    bindtap="catchEvent"
+  ></canvas>
+</view>

@@ -1,0 +1,97 @@
+.locationTimer-view-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: scroll;
+  justify-content: space-between;
+  margin: 20 0rxp;
+  flex-direction: column;
+  flex: 1;
+  padding: 20rpx 0 60rpx;
+
+  .top-Tips-wrapper {
+    left: 0;
+    right: 0;
+    top: 0;
+    justify-content: space-between;
+    padding: 30rpx;
+  }
+  .timer-item-wrapper {
+    position: relative;
+    height: 160rpx;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    padding: 0 30rpx;
+
+    .item-left-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+      padding: 10rpx 0;
+      .item-left-top-wrapper {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        flex-direction: row;
+        height: 90rpx;
+
+        .time-text {
+          font-size: 56rpx;
+          font-weight: bold;
+          color: #fff;
+        }
+        .item-left-top-right-wrapper {
+          padding: 20rpx 10rpx;
+          font-size: 24rpx;
+
+          .AMOrPM-wrapper {
+            border-radius: 10rpx;
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            width: 50rpx;
+          }
+          .action-wrapper {
+            border-radius: 10rpx;
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            width: 50rpx;
+          }
+          .open-text {
+            background: #00ff2f33;
+            color: #00ff2f;
+          }
+          .close-text {
+            background: #ff121233;
+            color: #ff1212;
+          }
+        }
+      }
+
+      .week-text {
+        line-height: 50rpx;
+        height: 50rpx;
+        font-size: 26rpx;
+        color: #fff;
+      }
+    }
+
+    .item-line-wrap {
+      background: #666;
+      height: 0.5px;
+      position: absolute;
+      bottom: 0;
+      left: 20rpx;
+      right: 20rpx;
+    }
+
+    #Switch {
+      right: 20rpx;
+    }
+  }
+}

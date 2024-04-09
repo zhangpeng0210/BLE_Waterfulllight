@@ -1,0 +1,303 @@
+import Pixel from '../diySmear/Pixel';
+const pixelRatio = getSystemInfo().pixelRatio || 2; // 分辨率
+
+export default Render({
+  box: [],
+  timer: undefined, //定时器
+  animateCount: 0, //动画次数
+  fillTextX: 10,
+  fillTextY: 0,
+  textWidth: 0, //文本宽度
+  isFirst: true,
+
+  createPixel() {
+    let ctx = this.ctx;
+    let pixelSize = Number(this.pixelSize);
+    let pixelShape = this.pixelShape;
+    this.box = [];
+    for (
+      let i = pixelSize / 2;
+      i < this.canvas.width / pixelRatio;
+      i = i + pixelSize + this.pixelGap
+    ) {
+      for (
+        let j = pixelSize / 2;
+        j < this.canvas.height / pixelRatio;
+        j = j + pixelSize + this.pixelGap
+      ) {
+        var pixel = new Pixel({
+          x: i,
+          y: j,
+          size: pixelSize,
+          shape: pixelShape,
+          isFill: true,
+          pixel: pixel,
+          fillStyle: 'rgb(67,68,71)',
+          pixelRatio: pixelRatio,
+        });
+        this.box.push(pixel);
+        // pixel.draw(ctx);
+        // count = count + 1;
+      }
+    }
+    this.box.forEach((piexl, idx) => {
+      piexl.fillStyle = this.pixelData?.length ? this.pixelData[idx].fillStyle : this.bgColor;
+      piexl.draw(ctx);
+    });
+  },
+
+  //开启定时器
+  async startTimer(animationType, interval) {
+    this.animationType = animationType;
+    this.interval = interval;
+    this.endTimer();
+
+    switch (this.animationType) {
+      case 'static': //静止
+        this.resetPiexl();
+        break;
+      default:
+        this.timer = setInterval(() => {
+          this.updateTimer();
+        }, this.interval);
+        break;
+    }
+  },
+
+  //结束定时器
+  endTimer() {
+    clearInterval(this.timer);
+  },
+
+  //更新定时器
+  updateTimer() {
+    let ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.updateStaticData(ctx);
+  },
+
+  //静图时更新数据
+  updateStaticData(ctx) {
+    switch (this.animationType) {
+      case 'right': //右
+        this.animateCount += 1;
+        this.fillTextX += this.pixelSize;
+        if (this.fillTextX >= this.canvas.width / pixelRatio) {
+          this.fillTextX = -this.textWidth;
+        }
+        this.drawText({});
+        break;
+      case 'left': //左
+        this.animateCount += 1;
+        this.fillTextX -= this.pixelSize;
+        if (this.fillTextX <= -this.textWidth) {
+          this.fillTextX = this.canvas.width / pixelRatio;
+        }
+        this.drawText({});
+
+        break;
+      case 'down': //下
+        this.animateCount += 1;
+        this.fillTextY += this.pixelSize;
+        if (this.fillTextY >= (this.canvas.height / pixelRatio) * 1.5) {
+          this.fillTextY = -this.canvas.height / pixelRatio / 2;
+        }
+        this.drawText({});
+
+        break;
+      case 'up': //上
+        this.animateCount += 1;
+        this.fillTextY -= this.pixelSize;
+        if (this.fillTextY <= -this.canvas.height / pixelRatio / 2) {
+          this.fillTextY = (this.canvas.height / pixelRatio) * 1.5;
+        }
+        this.drawText({});
+
+        break;
+      case 'flash': //闪烁
+        this.animateCount += 1;
+        if (this.animateCount >= 2) {
+          this.drawText({});
+          this.animateCount = 0;
+        }
+        break;
+      case 5: //禁止
+        break;
+    }
+  },
+  //动画前先复位
+  resetPiexl() {
+    let ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.animateCount = 0;
+    this.fillTextX = 10;
+    this.fillTextY = this.canvas.height / pixelRatio / 2;
+
+    this.drawText({});
+  },
+
+  //把文字放进画布
+  drawText({ bgColor, textColor, inputText, gradient, isCapture }) {
+    if (bgColor) this.bgColor = bgColor;
+    if (textColor) this.textColor = textColor;
+    if (inputText !== undefined) {
+      this.inputText = inputText;
+      this.textWidth = Math.ceil(this.ctx.measureText(this.inputText).width);
+    }
+    if (this.inputText !== undefined) {
+      this.textWidth = Math.ceil(this.ctx.measureText(this.inputText).width);
+    }
+
+    if (gradient) this.gradient = gradient;
+    this.box = [];
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.inputText && this.inputText.length > 0) {
+      this.ctx.font = `36px PingFangSC-Regular`;
+      if (this.showType === 0) {
+        if (this.gradient && this.gradient.length > 0) {
+          this.ctx.fillStyle = '#FFFFFF';
+
+          var linearGradient = this.ctx.createLinearGradient(
+            0,
+            0,
+            this.canvas.width / pixelRatio,
+            0
+          );
+          linearGradient.addColorStop(0, this.gradient[0]);
+          linearGradient.addColorStop(0.5, this.gradient[1]);
+          linearGradient.addColorStop(1, this.gradient[2]);
+          this.ctx.fillStyle = linearGradient;
+        } else {
+          this.ctx.fillStyle = this.textColor;
+        }
+      } else {
+        this.ctx.fillStyle = this.textColor;
+      }
+      this.ctx.textAlign = this.showType === 0 ? 'left' : 'right';
+      this.ctx.textBaseline = 'middle';
+      let char = this.inputText.replace(/[^\x00-\xff]/g, '');
+
+      if (isCapture) {
+        this.fillTextX = 20;
+      }
+      this.ctx.fillText(
+        char,
+        this.showType === 0 ? this.fillTextX : this.canvas.width / pixelRatio,
+        this.fillTextY
+      );
+      // this.getTextPiexlData();
+      if (this.bgColor) {
+        this.canvas.style.background = this.bgColor;
+      }
+      if (isCapture && this.showType === 0) {
+        this.getThumbImage();
+      }
+    } else {
+      this.createPixel();
+    }
+  },
+
+  //读取画布上文字的点
+  getTextPiexlData() {
+    var copya = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.widthNum = 0;
+    let ctx = this.ctx;
+    let w = this.canvas.width;
+    let h = this.canvas.height;
+    //筛选有效像素点，a大于128
+    var leap = Number(this.pixelSize); //间隔
+    for (var x = 0; x < w; x += leap * pixelRatio) {
+      this.widthNum += 1;
+
+      for (var y = 0; y < h; y += leap * pixelRatio) {
+        var index = x + y * w;
+
+        var r = copya.data[index * 4];
+        var g = copya.data[index * 4 + 1];
+        var b = copya.data[index * 4 + 2];
+        var a = copya.data[index * 4 + 3];
+        var pixel = new Pixel({
+          x: (x + leap) / pixelRatio,
+          y: (y + leap) / pixelRatio,
+          size: leap,
+          shape: this.pixelShape,
+          isFill: true,
+          pixel: pixel,
+          pixelRatio: pixelRatio,
+        });
+        if (a > 128) {
+          pixel.fillStyle = `rgba(${r},${g},${b},${a})`;
+        } else {
+          pixel.fillStyle = this.bgColor;
+        }
+        pixel.draw(ctx);
+
+        this.box.push(pixel);
+      }
+    }
+  },
+
+  async initPanel({
+    width,
+    height,
+    pixelSize,
+    pixelShape,
+    textColor,
+    bgColor,
+    gradient,
+    pixelGap,
+    pixelData,
+    showType,
+    canvasId,
+    interval,
+    isPasue,
+    inputText,
+  }) {
+    let canvas = await getCanvasById(canvasId);
+    var ctx = canvas.getContext('2d');
+    this.canvas = canvas;
+    this.ctx = ctx;
+    this.interval = interval;
+    this.pixelSize = pixelSize;
+    this.pixelShape = pixelShape;
+    this.textColor = textColor;
+    this.bgColor = bgColor;
+    this.gradient = gradient;
+    this.pixelGap = pixelGap;
+    this.pixelData = pixelData;
+    this.showType = showType;
+    this.canvasId = canvasId;
+    this.isPasue = isPasue;
+    this.inputText = inputText;
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+    canvas.canvasId = canvasId;
+    ctx.scale(pixelRatio, pixelRatio);
+
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    this.fillTextX = 10;
+    this.fillTextY = height / 2;
+
+    const self = this;
+    this.drawText({});
+    let handleCanvasEvent = function(e) {};
+    let handleCanvasMoveEvent = function(e) {};
+    let handleCanvasEndEvent = function(e) {};
+    if (self.isFirst) {
+      canvas.addEventListener('touchstart', handleCanvasEvent, false);
+      canvas.addEventListener('touchmove', handleCanvasMoveEvent, false);
+      canvas.addEventListener('touchend', handleCanvasEndEvent, false);
+
+      self.isFirst = false;
+    }
+  },
+  //根据canvas获取图片
+  async getThumbImage() {
+    const thumbImageData = this.canvas.toDataURL('image/png', 0.1);
+    this.callMethod('getThumbImage', thumbImageData);
+  },
+});

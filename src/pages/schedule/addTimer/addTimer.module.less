@@ -1,0 +1,90 @@
+.addTimer-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #000;
+  .pickerView-wrapper {
+    background: #3a3b3c;
+
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .weeks-view-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin: 0px 20rpx;
+    margin-top: 48rpx;
+    margin-bottom: 68rpx;
+    height: 120rpx;
+    flex-direction: row;
+    padding: 20rpx 30rpx;
+
+    .week-item {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 40rpx;
+      border-style: solid;
+      border-width: 1px;
+      border-color: white;
+      font-size: 24rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      &.active {
+        background-color: #3793ff;
+        border-style: none;
+      }
+    }
+  }
+
+  .action-view {
+    height: 96rpx;
+    width: 100vw;
+    padding-left: 48rpx;
+    padding-right: 48rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #434344;
+
+    .action-handle {
+      display: flex;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.4);
+
+      .action-handle-text {
+        width: 12rpx;
+        height: 24rpx;
+        margin-left: 12rpx;
+      }
+    }
+
+    .action-view-text {
+      position: relative;
+      top: 2rpx;
+      color: #fff;
+      font-size: 32rpx;
+    }
+  }
+
+  .bottom-saveButton-wrapper {
+    display: flex;
+    position: fixed;
+    bottom: 60rpx;
+    right: 48rpx;
+    left: 48rpx;
+    background-color: rgb(55, 147, 255);
+    height: 80rpx;
+    border-radius: 40rpx;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+  }
+}

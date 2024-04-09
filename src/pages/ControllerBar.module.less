@@ -1,0 +1,53 @@
+@import url("@/common/index.less");
+
+.controller-bar {
+  display: flex;
+  z-index: 201;
+  flex-direction: row;
+  width: 100vw;
+  height: 196rpx;
+  background-color: rgba(43, 43, 44, 1);
+  border-top-left-radius: 40rpx;
+  border-top-right-radius: 40rpx;
+  padding-left: 48rpx;
+  padding-right: 48rpx;
+  position: absolute;
+  .power-button {
+    width: 188rpx;
+    height: 104rpx;
+    border-radius: 52rpx;
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
+    z-index: 203;  
+  }
+
+  .controller-bar-item {
+    background-color: transparent;
+    padding: 10px 8px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 202;
+  }
+  .setting-bar {
+    z-index: 203;
+  }
+  .tabar-icon{
+    width: 40rpx;
+    height: 40rpx;
+    margin-bottom: 10rpx;
+  }
+
+  .maskView2 {
+    position: absolute;
+    background-color:rgba(33,33, 33, 0.5);
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 202;
+  }
+}

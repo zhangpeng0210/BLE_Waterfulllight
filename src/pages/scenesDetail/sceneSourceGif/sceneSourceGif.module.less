@@ -1,0 +1,43 @@
+@import url("@/common/index.less");
+.scene-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  flex: 1;
+  min-height: 100vh;
+  background-color:rgb(0, 0, 0);
+  padding-top: 0rpx;
+}
+
+.lamp-direction-speed-wraper {
+  flex-direction: column;
+  flex-wrap: wrap;
+  display: flex;
+  flex: 1;
+}
+
+
+.lamp-slider-wrap {
+  color: #ffffff;
+  font-size: 28rpx;
+  padding: 0 32rpx;
+  margin: 16rpx 0;
+  z-index: 990;
+}
+
+.speedSelector-playOrPause-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 60rpx;
+  .pause-wrapper {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  .playIcon {
+    width: 60rpx;
+    height: 60rpx;
+  }
+}

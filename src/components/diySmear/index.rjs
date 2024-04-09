@@ -1,0 +1,787 @@
+import Pixel from './Pixel';
+
+const pixelRatio = getSystemInfo().pixelRatio || 2; // 分辨率
+var X = 0; // 移动canvas x轴的偏移量
+var Y = 0; // 移动canvas y轴的偏移量
+var tempX = X; // 中间态记录移动canvas x轴的偏移量
+var tempY = Y; // 中间态记录移动canvas y轴的偏移量
+var touchStartX = 0; // touchstart的XY
+var touchStartY = 0;
+var lastX = 0; // 上一次移动的X和Y
+var lastY = 0;
+
+export default Render({
+  scale: 1,
+  box: [],
+  timer: undefined, //定时器
+  animateCount: 0, //动画次数
+  isDynamic: false,
+  breatheIndex: 0, //动态呼吸时第几帧
+  dynamicBox: [], //动图数组
+  isFirst: true,
+  penColor: 'rgb(255,0,0)',
+  opration: 1, //操作类型 1、画笔 2、油漆桶 3、橡皮擦、4、吸色器
+  row: 0, //行数
+  list: 0, //列数
+  /**
+   * @param  {} canvas
+   * @param  {} x
+   * @param  {} y
+   * @description 将鼠标位置定位到canvas坐标
+   */
+  WindowToCanvas(canvas, x, y) {
+    var box = canvas.getBoundingClientRect();
+    return {
+      x: x - box.left - X,
+      y: y - box.top - Y,
+    };
+  },
+
+  async createPixel() {
+    let ctx = this.ctx;
+    let pixelSize = Number(this.pixelSize);
+    let pixelShape = this.pixelShape;
+    this.box = [];
+    this.row = Math.round(this.canvas.height / pixelRatio / pixelSize);
+    this.list = Math.round(this.canvas.width / pixelRatio / pixelSize);
+
+    for (
+      let i = pixelSize / 2;
+      i < this.canvas.width / pixelRatio;
+      i = i + pixelSize + this.pixelGap
+    ) {
+      for (
+        let j = pixelSize / 2;
+        j < this.canvas.height / pixelRatio;
+        j = j + pixelSize + this.pixelGap
+      ) {
+        var pixel = new Pixel({
+          x: i,
+          y: j,
+          size: pixelSize,
+          shape: pixelShape,
+          isFill: true,
+          pixel: pixel,
+          fillStyle: this.pixelColor,
+          pixelRatio: pixelRatio,
+        });
+        this.box.push(pixel);
+        // pixel.draw(ctx);
+        // count = count + 1;
+      }
+    }
+
+    if (this.isDynamic && this.showType === 0) {
+      this.dynamicBox = [];
+      this.dynamicData.forEach(thumbData => {
+        let tempBox = [];
+        if (thumbData.box.length !== 0) {
+          this.box.forEach((piexl, idx) => {
+            var newPixel = new Pixel({
+              x: piexl.x,
+              y: piexl.y,
+              size: piexl.size,
+              shape: piexl.shape,
+              isFill: true,
+              fillStyle: thumbData.box[idx].fillStyle,
+              pixelRatio: piexl.pixelRatio,
+            });
+            tempBox.push(newPixel);
+          });
+        } else {
+          this.box.forEach((piexl, idx) => {
+            var newPixel = new Pixel({
+              x: piexl.x,
+              y: piexl.y,
+              size: piexl.size,
+              shape: piexl.shape,
+              isFill: true,
+              fillStyle: this.pixelColor,
+              pixelRatio: piexl.pixelRatio,
+            });
+            tempBox.push(newPixel);
+          });
+        }
+        this.dynamicBox.push(tempBox);
+      });
+      //初始化时先画动态的第一张图
+      let tempbox = this.dynamicBox[0];
+      tempbox.forEach(piexl => {
+        piexl.draw(ctx);
+      });
+      this.startTimer(this.animationType, this.interval);
+    } else {
+
+      this.box.forEach((piexl, idx) => {
+        if (this.pixelData == undefined) {
+          piexl.fillStyle = this.pixelColor;
+        }else {
+          if (this.pixelData.length == 0) {
+            piexl.fillStyle = this.pixelColor;
+          }else {
+            if (idx < this.pixelData.length) {
+              piexl.fillStyle =  this.pixelData[idx].fillStyle;
+            }else {//此时带进来的数据少于画出来的点，用默认颜色代替
+              piexl.fillStyle =  this.pixelColor;
+            }
+          }
+        }
+        piexl.draw(ctx);
+      });
+      this.getThumbImage();
+      //初始化
+      if (this.pixelData == undefined) {
+        this.callMethod('getBoxData', this.box, -1);
+      }else {
+        if (this.pixelData.length > 0) {
+          this.callMethod('getBoxData', this.pixelData, -1);
+        }else {
+          this.callMethod('getBoxData', this.box, -1);
+        }
+      }
+    }
+  },
+
+  // 更新canvas
+  refresh() {
+    let ctx = this.ctx;
+    if (ctx != undefined) {
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    for (var i = 0; i < this.box.length; i++) {
+      var pixel = this.box[i];
+      pixel.draw(ctx);
+    }
+  },
+
+  //开启定时器
+  async startTimer(animationType, interval) {
+    this.animationType = animationType;
+    this.interval = interval;
+    this.endTimer();
+    if (this.isDynamic) {
+      if (this.dynamicBox.length == 1) {
+        let isHavePiexl = this.dynamicBox[this.animateCount].some(piexl => {
+          return piexl.fillStyle != 'rgb(67,68,71)';
+        });
+        if (isHavePiexl) {
+          this.timer = setInterval(() => {
+            this.updateTimer();
+          }, this.interval);
+        }
+      } else {
+        this.timer = setInterval(() => {
+          this.updateTimer();
+        }, this.interval);
+      }
+    } else {
+      switch (this.animationType) {
+        case 'static': //静止
+          break;
+        default:
+          this.timer = setInterval(() => {
+            this.updateTimer();
+          }, this.interval);
+          break;
+      }
+    }
+  },
+
+  //结束定时器
+  endTimer() {
+    clearInterval(this.timer);
+  },
+
+  //更新定时器
+  updateTimer() {
+    let ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    if (this.isDynamic) {
+      //更新动态数据
+      this.updateDynamicData(ctx);
+    } else {
+      //更新静态数据
+      this.updateStaticData(ctx);
+    }
+  },
+
+  //静图时更新数据
+  updateStaticData(ctx) {
+    let newIdx = 0;
+    switch (this.animationType) {
+      case 'up': //平移上
+        this.animateCount += 1;
+        if (this.animateCount == this.row * 2) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          let fillStyle = 'rgb(67,68,71)';
+          if (this.animateCount < this.row) {
+            let newIdx = idx + this.animateCount;
+
+            if (Math.floor(idx / this.row) == Math.floor(newIdx / this.row)) {
+              //在同一列
+              fillStyle = this.box[newIdx].fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          } else {
+            let newIdx = idx - (this.row * 2 - this.animateCount);
+            if (Math.floor(idx / this.row) == Math.floor(newIdx / this.row)) {
+              //在同一列
+              fillStyle = this.box[newIdx].fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+        break;
+
+      case 'down': //平移下
+        this.animateCount += 1;
+        if (this.animateCount == this.row * 2) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          let fillStyle = 'rgb(67,68,71)';
+          if (this.animateCount < this.row) {
+            let newIdx = idx - this.animateCount;
+            if (Math.floor(idx / this.row) == Math.floor(newIdx / this.row)) {
+              //在同一列
+              fillStyle = this.box[newIdx].fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          } else {
+            let newIdx = idx + this.row * 2 - this.animateCount;
+            if (Math.floor(idx / this.row) == Math.floor(newIdx / this.row)) {
+              //在同一列
+              fillStyle = this.box[newIdx].fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+        break;
+      case 'left': //平移左
+        this.animateCount += 1;
+        if (this.animateCount == this.list * 2) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          let fillStyle = '';
+          if (this.animateCount < this.list) {
+            if (idx < this.row * this.list - this.animateCount * this.row) {
+              fillStyle = this.box[idx + this.animateCount * this.row].fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          } else {
+            if (idx < this.row * this.list - (this.animateCount - this.list) * this.row) {
+              fillStyle = 'rgb(67,68,71)';
+            } else {
+              fillStyle = this.box[
+                idx - (this.row * this.list - (this.animateCount - this.list) * this.row)
+              ].fillStyle;
+            }
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+        break;
+      case 'right': //平移右
+        this.animateCount += 1;
+        if (this.animateCount == this.list * 2) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          let fillStyle = '';
+          if (this.animateCount < this.list) {
+            if (idx < this.animateCount * this.row) {
+              fillStyle = 'rgb(67,68,71)';
+            } else {
+              fillStyle = this.box[idx - this.animateCount * this.row].fillStyle;
+            }
+          } else {
+            if (idx < this.animateCount * this.row - this.list * this.row) {
+              fillStyle = this.box[idx + (this.row * this.list * 2 - this.animateCount * this.row)]
+                .fillStyle;
+            } else {
+              fillStyle = 'rgb(67,68,71)';
+            }
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+
+        break;
+      case 'flash': //闪烁
+        this.animateCount += 1;
+        if (this.animateCount >= 2) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          if (this.animateCount % 2 === 0) {
+            piexl.draw(ctx);
+          } else {
+            var newPixel = new Pixel({
+              x: piexl.x,
+              y: piexl.y,
+              size: piexl.size,
+              shape: piexl.shape,
+              isFill: true,
+              fillStyle: this.pixelColor,
+              pixelRatio: piexl.pixelRatio,
+            });
+            newPixel.draw(ctx);
+          }
+        });
+        break;
+      case 'static': //禁止
+        break;
+      case 'up_loop': //循环上
+        this.animateCount += 1;
+        if (this.animateCount >= this.row) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          newIdx = idx + 1 * this.animateCount;
+          if (Math.floor(idx / this.row) - Math.floor(newIdx / this.row) < 0) {
+            newIdx = newIdx - this.row;
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: this.box[newIdx].fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+        break;
+      case 'down_loop': //循环下
+        this.animateCount += 1;
+        if (this.animateCount >= this.row) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          newIdx = idx - 1 * this.animateCount;
+          if (Math.floor(newIdx / this.row) - Math.floor(idx / this.row) < 0) {
+            newIdx = newIdx + this.row;
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: this.box[newIdx].fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+
+        break;
+
+      case 'breathe': //呼吸
+        this.animateCount += 1;
+        if (this.animateCount >= 20) {
+          this.animateCount = 0;
+        }
+
+        this.box.forEach((piexl, idx) => {
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: piexl.fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          if (this.animateCount < 10) {
+            //由亮到灭
+            if (piexl.fillStyle !== 'rgb(67,68,71)') {
+              newPixel.fillStyle = this.getGradientColors(piexl.fillStyle, 'rgb(67,68,71)', 10)[
+                this.animateCount
+              ];
+            }
+          } else {
+            //由灭到亮
+            if (piexl.fillStyle !== 'rgb(67,68,71)') {
+              newPixel.fillStyle = this.getGradientColors('rgb(67,68,71)', piexl.fillStyle, 10)[
+                this.animateCount - 10
+              ];
+            }
+          }
+          newPixel.draw(ctx);
+        });
+
+        break;
+
+      case 'right_loop': //循环右
+        this.animateCount += 1;
+        if (this.animateCount >= this.list) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          newIdx = idx - this.row * this.animateCount;
+          if (newIdx < 0) {
+            newIdx = this.box.length + newIdx;
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: this.box[newIdx].fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+
+        break;
+      case 'left_loop': //循环左
+        this.animateCount += 1;
+        if (this.animateCount >= this.list) {
+          this.animateCount = 0;
+        }
+        this.box.forEach((piexl, idx) => {
+          newIdx = idx + this.row * this.animateCount;
+          if (newIdx >= this.box.length) {
+            newIdx = newIdx - this.box.length;
+          }
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: this.box[newIdx].fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          newPixel.draw(ctx);
+        });
+
+        break;
+    }
+  },
+
+  //动画时更新动态数据
+  updateDynamicData(ctx) {
+    switch (this.animationType) {
+      case 'flash':
+        if (this.animateCount >= this.dynamicBox.length) {
+          this.animateCount = 0;
+        }
+        let box = this.dynamicBox[this.animateCount];
+        box.forEach(piexl => {
+          piexl.draw(ctx);
+        });
+        this.animateCount += 1;
+        break;
+      case 'breathe':
+        if (this.animateCount >= 20) {
+          this.animateCount = 0;
+          this.breatheIndex += 1;
+        }
+        if (this.breatheIndex >= this.dynamicBox.length) {
+          this.animateCount = 0;
+          this.breatheIndex = 0;
+        }
+        let tempbox = this.dynamicBox[this.breatheIndex];
+        tempbox.forEach((piexl, idx) => {
+          var newPixel = new Pixel({
+            x: piexl.x,
+            y: piexl.y,
+            size: piexl.size,
+            shape: piexl.shape,
+            isFill: true,
+            fillStyle: piexl.fillStyle,
+            pixelRatio: piexl.pixelRatio,
+          });
+          if (this.animateCount < 10) {
+            //由灭到亮
+            if (piexl.fillStyle !== 'rgb(67,68,71)') {
+              newPixel.fillStyle = this.getGradientColors('rgb(67,68,71)', piexl.fillStyle, 10)[
+                this.animateCount
+              ];
+            }
+          } else {
+            //由亮到灭
+            if (piexl.fillStyle !== 'rgb(67,68,71)') {
+              newPixel.fillStyle = this.getGradientColors(piexl.fillStyle, 'rgb(67,68,71)', 10)[
+                this.animateCount - 10
+              ];
+            }
+          }
+          newPixel.draw(ctx);
+        });
+        this.animateCount += 1;
+
+        break;
+    }
+  },
+
+  //动画前先复位
+  resetPiexl() {
+    if (!this.canvas) {
+      return;
+    }
+    this.animateCount = 0;
+    this.breatheIndex = 0;
+
+    let ctx = this.ctx;
+    if (ctx != undefined) {
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      this.box.forEach((piexl, idx) => {
+        piexl.draw(ctx);
+      });  
+    }
+  },
+
+  async initCanvas({ canvasId }) {
+    this.canvas = await getCanvasById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+  },
+
+  async initPanel({
+    width,
+    height,
+    pixelSize,
+    pixelShape,
+    pixelColor,
+    pixelGap,
+    pixelData,
+    showType,
+    canvasId,
+    interval,
+    dynamicData,
+    isDynamic,
+  }) {
+    let canvas;
+    let ctx;
+    if (showType === 1) {
+      canvas = await getCanvasById(canvasId);
+      ctx = canvas.getContext('2d');
+      this.canvas = canvas;
+      this.ctx = ctx;
+    } else {
+      if (!this.canvas) {
+        return;
+      }
+      canvas = this.canvas;
+      ctx = this.ctx;
+    }
+
+    this.interval = interval;
+    this.isDynamic = isDynamic;
+    this.pixelSize = pixelSize;
+    this.pixelShape = pixelShape;
+    this.pixelColor = pixelColor;
+    this.pixelGap = pixelGap;
+    this.pixelData = pixelData;
+    this.dynamicData = dynamicData;
+    this.showType = showType;
+    this.canvasId = canvasId;
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+    canvas.canvasId = canvasId;
+    ctx.scale(pixelRatio, pixelRatio);
+
+    const self = this;
+    this.createPixel();
+    let handleCanvasEvent = function(e) {
+      if (self.opration === 5) {
+        // 拖拽，不支持涂抹
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        tempX = X;
+        tempY = Y;
+      } else {
+        // 不支持拖拽，支持涂抹
+        //仅做展示时也不用涂抹
+        if (self.showType === 0) {
+        } else {
+          let p1x = self.WindowToCanvas(canvas, e.touches[0].clientX + X, e.touches[0].clientY + Y);
+          for (var p = 0; p < self.box.length; p++) {
+            var pixel = self.box[p];
+            if (pixel.isPointInPath(ctx, p1x)) {
+              if (pixel.fillStyle !== self.penColor) {
+                if (self.opration === 4) {
+                  //吸色器
+                  if (pixel.fillStyle !== 'rgb(67,68,71)') {
+                    self.penColor = pixel.fillStyle;
+                    self.callMethod('eyedropperColor', self.penColor);
+                  }
+                } else {
+                  pixel.fillStyle = self.penColor;
+                  self.callMethod('getBoxData', self.box, p);
+                  self.refresh(ctx);
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+    let handleCanvasMoveEvent = function(e) {
+      if (self.opration === 5) {
+        // 拖拽，不支持涂抹
+        let deltaX = e.touches[0].clientX - lastX;
+        let deltaY = e.touches[0].clientY - lastY;
+        self.ctx.clearRect(0, 0, canvas.width, canvas.height); // 清除画布
+        self.ctx.translate(deltaX / self.scale, deltaY / self.scale);
+        X = tempX - (touchStartX - e.touches[0].clientX) / self.scale;
+        Y = tempY - (touchStartY - e.touches[0].clientY) / self.scale;
+        self.refresh();
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      } else {
+        // 不支持拖拽，支持涂抹
+        //仅做展示时也不用涂抹
+        if (self.showType === 0) {
+        } else {
+          let p1x = self.WindowToCanvas(canvas, e.touches[0].clientX + X, e.touches[0].clientY + Y);
+          // mousedown = true
+          for (var p = 0; p < self.box.length; p++) {
+            var pixel = self.box[p];
+            if (pixel.isPointInPath(ctx, p1x)) {
+              if (pixel.fillStyle !== self.penColor) {
+                if (self.opration === 4) {
+                  //吸色器
+                  if (pixel.fillStyle !== 'rgb(67,68,71)') {
+                    self.penColor = pixel.fillStyle;
+                    self.callMethod('eyedropperColor', self.penColor);
+                  }
+                } else {
+                  pixel.fillStyle = self.penColor;
+                  self.callMethod('getBoxData', self.box, p);
+                  self.refresh(ctx);
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+    let handleCanvasEndEvent = function(e) {
+      if (self.showType === 1) {
+        self.getThumbImage();
+      }
+    };
+    if (self.isFirst) {
+      canvas.addEventListener('touchstart', handleCanvasEvent, false);
+      canvas.addEventListener('touchmove', handleCanvasMoveEvent, false);
+      canvas.addEventListener('touchend', handleCanvasEndEvent, false);
+
+      self.isFirst = false;
+    }
+  },
+
+  // 缩小
+  shrink(scale) {
+    this.scale = scale;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.scale(scale, scale);
+    this.refresh();
+  },
+  // 放大
+  magnify(scale) {
+    this.scale = scale;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.scale(scale, scale);
+    this.refresh();
+  },
+  // 清除画布
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.pixelData = [];
+    this.createPixel();
+    this.box.forEach(piexl => {
+      piexl.fillStyle = this.pixelColor;
+    });
+  },
+  // 橡皮擦
+  eraser() {
+    this.penColor = this.pixelColor;
+  },
+  // 更新画笔颜色
+  updateColor(color) {
+    this.penColor = color;
+  },
+  //更新操作类型
+  updateOpration(opration) {
+    this.opration = opration;
+  },
+  //根据canvas获取图片
+  async getThumbImage() {
+    const thumbImageData = this.canvas.toDataURL('image/jpeg', 0.1);
+    this.callMethod('getThumbImage', thumbImageData);
+  },
+
+  //计算渐变过渡色
+  getGradientColors(startColor, endColor, step) {
+    //将hex转换为rgb
+    var sColor = startColor.match(/\d+/g).map(Number);
+    var eColor = endColor.match(/\d+/g).map(Number);
+    //计算R/G/B每一步差值
+    const rStep = (eColor[0] - sColor[0]) / step,
+      gStep = (eColor[1] - sColor[1]) / step,
+      bStep = (eColor[2] - sColor[2]) / step;
+    var gradientColor = [];
+
+    for (var i = 0; i < step; i++) {
+      gradientColor.push(
+        `rgb(${parseInt(rStep * i + sColor[0])},${parseInt(gStep * i + sColor[1])},${parseInt(
+          bStep * i + sColor[2]
+        )})`
+      );
+    }
+
+    return gradientColor;
+  },
+});

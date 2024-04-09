@@ -1,0 +1,3 @@
+export const CHANGE_DP = 'CHANGE_DP';
+export const RESPONSE_UPDATE_DP = 'RESPONSE_UPDATE_DP';
+export const DEV_INFO_CHANGE = 'DEV_INFO_CHANGE';

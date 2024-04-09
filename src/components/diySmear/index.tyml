@@ -1,0 +1,62 @@
+<view >
+  <view class="smear-wrap" style="width:{{elementWidth}}; height:{{elementHeight}};padding:{{elementPadding}}" bindtap="catchEvent" >
+    <canvas
+      type="2d"
+      canvas-id="{{canvasId}}"
+      disable-scroll="{{showType === 1}}"
+      style="width: {{width}}px; height: {{height}}px; background-color:#212121"  
+    >
+    </canvas>
+  </view>
+  
+  <view class="smear-opration-wrap" ty:if="{{showType === 1}}">
+    <view class="smear-left-opration-wrap">
+    <!-- 拖拽 -->
+    <view class="item-wrap" bindtap="isDragCanvas"  >
+      <image src="/res/canvas_drag_s.png" ty:if="{{opration === 5}}" mode="aspectFit"></image>
+      <image src="/res/canvas_dragButton_n.png" ty:else="{{opration !== 5}}"></image>
+    </view>
+    <!-- 缩小 -->
+    <view class="item-wrap" bindtap="shrinkCanvas"  disabled="true" mode="aspectFit">
+      <image src="/res/canvas_narrow.png"></image>
+    </view>
+    <!-- 缩放比例 -->
+    <view class="item-wrap canvas-scale-text">
+      {{absoluteScale * 100 + "%"}}
+    </view>
+    <!-- 放大 -->
+    <view class="item-wrap" bindtap="magnifyCanvas">
+      <image src="/res/canvas_enlarge.png" mode="aspectFit"></image>
+    </view>
+    </view>
+    <view class="smear-right-opration-wrap">
+      <!-- 画笔 -->
+      <view class="item-wrap" bindtap="drawPen" >
+        <image src="/res/canvas_drawPen_s.png" ty:if="{{opration === 1}}" mode="aspectFit"></image>
+        <image src="/res/canvas_drawPen_n.png" ty:else="{{opration !== 1}}" mode="aspectFit"></image>
+      </view>
+
+      <!-- 油漆桶 -->
+      <view class="item-wrap" bindtap="paintBucket" >
+        <image src="/res/canvas_paintBucket_s.png" ty:if="{{opration === 2}}" mode="aspectFit"></image>
+        <image src="/res/canvas_paintBucket_n.png" ty:else="{{opration !== 2}}" mode="aspectFit"></image>
+      </view>
+
+      <!-- 橡皮擦 -->
+      <view class="item-wrap" bindtap="eraserCanvas" >
+        <image src="/res/canvas_eraser_s.png" ty:if="{{opration === 3}}" mode="aspectFit"></image>
+        <image src="/res/canvas_eraser_n.png" ty:else="{{opration !== 3}}" mode="aspectFit"></image>
+      </view>
+      <!-- 吸色器 -->
+      <view class="item-wrap" bindtap="eyedropper" >
+        <image src="/res/canvas_eyedropper_s.png" ty:if="{{opration === 4}}" mode="aspectFit"></image>
+        <image src="/res/canvas_eyedropper_n.png" ty:else="{{opration !== 4}}" mode="aspectFit"></image>
+      </view>
+
+      <!-- 清除 -->
+      <view class="item-wrap clear-wrap" bindtap="clearCanvas" >
+        <image src="/res/canvas_deleteButton.png" mode="aspectFit"></image>
+      </view>
+    </view>
+  </view>
+</view>
