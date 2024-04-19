@@ -13,6 +13,7 @@ import { store } from '@/redux';
 import { TYSdk } from '@ray-js/ray-panel-core';
 import { publishGroupDps } from '@ray-js/ray';
 import * as animationType from '../../diyList/smear/module';
+import SupportUtils from '@/utils/supportUtils';
 
 import './module.less';
 
@@ -20,6 +21,7 @@ const LoopCollection = props => {
   const isGroup = !(TYSdk.devInfo.groupId === undefined);
   const { toFixed, hexStringToBinString, strToHexString } = utils;
   const { useDpState } = hooks;
+  const { getDpIdByCode } = TYSdk.device;
   const { groupDPs } = store.getState();
   const lineMaxCount = 7; //单行最大个数
   const itemW = ((375 - 20 - lineMaxCount * 15) / lineMaxCount) * 2;
@@ -43,43 +45,58 @@ const LoopCollection = props => {
   useEffect(() => {
     if (isGroup) {
       const groupLoopNumbersDataHEX =
-        groupDPs['113'] === undefined ||
-        groupDPs['113'] == '' ||
-        String(groupDPs['113']).length < 16
+        groupDPs[getDpIdByCode(dpCodes.loopNumbers)] === undefined ||
+        groupDPs[getDpIdByCode(dpCodes.loopNumbers)] == '' ||
+        String(groupDPs[getDpIdByCode(dpCodes.loopNumbers)]).length < 16
           ? '0000000000000000'
-          : groupDPs['113'];
-      changeSceneLoopNumberData(groupLoopNumbersDataHEX);
+          : groupDPs[getDpIdByCode(dpCodes.loopNumbers)];
 
+      changeSceneLoopNumberData(groupLoopNumbersDataHEX);
       const groupIsLoop =
-        groupDPs['111'] == '' ||
-        groupDPs['111'] === undefined ||
-        groupLoopNumbersDataHEX == '0000000000000000'
-          ? false
-          : groupDPs['111'];
+        groupDPs[getDpIdByCode(dpCodes.isLoop)] == '' ||
+        groupDPs[getDpIdByCode(dpCodes.isLoop)] === undefined ||
+        groupDPs[dpCodes.loopNumbers].includes('\u0000');
+      groupLoopNumbersDataHEX == '0000000000000000'
+        ? false
+        : groupDPs[getDpIdByCode(dpCodes.isLoop)];
       setIsLoop(groupIsLoop);
       if (groupIsLoop) {
         updateIsLoopStatusDP(true);
       }
       const groupSpeed =
-        groupDPs['103'] == 0 || groupDPs['103'] === undefined ? 100 : groupDPs['103'];
+        groupDPs[getDpIdByCode(dpCodes.sceneSpeed)] == 0 ||
+        groupDPs[getDpIdByCode(dpCodes.sceneSpeed)] === undefined
+          ? 100
+          : groupDPs[getDpIdByCode(dpCodes.sceneSpeed)];
       setSpeedValue(groupSpeed);
 
       const groupBrightness =
-        groupDPs['105'] == 0 || groupDPs['105'] === undefined ? 100 : groupDPs['105'];
+        groupDPs[getDpIdByCode(dpCodes.sceneBright)] == 0 ||
+        groupDPs[getDpIdByCode(dpCodes.sceneBright)] === undefined
+          ? 100
+          : groupDPs[getDpIdByCode(dpCodes.sceneBright)];
       setBrightnessValue(groupBrightness);
 
       const groupLoopTimer =
-        groupDPs['112'] == 0 || groupDPs['112'] === undefined ? 60 : groupDPs['112'];
+        groupDPs[getDpIdByCode(dpCodes.loopTimer)] == 0 ||
+        groupDPs[getDpIdByCode(dpCodes.loopTimer)] === undefined
+          ? 60
+          : groupDPs[getDpIdByCode(dpCodes.loopTimer)];
       setLoopTimeValue(groupLoopTimer);
 
       const groupIsPause =
-        groupDPs['102'] == '' || groupDPs['102'] === undefined ? false : groupDPs['102'];
+        groupDPs[getDpIdByCode(dpCodes.isPause)] == '' ||
+        groupDPs[getDpIdByCode(dpCodes.isPause)] === undefined
+          ? false
+          : groupDPs[getDpIdByCode(dpCodes.isPause)];
       setIsPause(groupIsPause);
     } else {
       //收藏的场景数据
       let tempLoopData;
       if (dpState[dpCodes.loopNumbers] == undefined || dpState[dpCodes.loopNumbers] == '') {
         tempLoopData = '0000000000000000';
+      } else if (String(dpState[dpCodes.loopNumbers]).includes('\u0000')) {
+        tempLoopData = String(dpState[dpCodes.loopNumbers]).replace(/\u0000/g, '00');
       } else {
         tempLoopData = dpState[dpCodes.loopNumbers];
       }
@@ -106,7 +123,6 @@ const LoopCollection = props => {
   //把收藏场景的数据转成数组
   const changeSceneLoopNumberData = loopNumbersData => {
     const bitArray = hexStringToBinString(String(loopNumbersData));
-
     let tempArray = [];
     for (let i = 0; i < bitArray.length; i++) {
       if (i % 8 == 0) {
@@ -171,9 +187,11 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '111': status },
+        dps: { [getDpIdByCode(dpCodes.isLoop)]: status },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '111': status }));
+          store.dispatch(
+            actions.common.updateGroupDPs({ [getDpIdByCode(dpCodes.isLoop)]: status })
+          );
         },
       });
     } else {
@@ -195,9 +213,11 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '25': sceneDataStr },
+        dps: { [getDpIdByCode(dpCodes.sceneCode)]: sceneDataStr },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '25': sceneDataStr }));
+          store.dispatch(
+            actions.common.updateGroupDPs({ [getDpIdByCode(dpCodes.sceneCode)]: sceneDataStr })
+          );
         },
       });
     } else {
@@ -239,13 +259,16 @@ const LoopCollection = props => {
         collectedNumberStr += strToHexString(byte);
       }
     }
-    console.log('collectedNumberStr', collectedNumberStr);
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '113': collectedNumberStr },
+        dps: { [getDpIdByCode(dpCodes.loopNumbers)]: collectedNumberStr },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '113': collectedNumberStr }));
+          store.dispatch(
+            actions.common.updateGroupDPs({
+              [getDpIdByCode(dpCodes.loopNumbers)]: collectedNumberStr,
+            })
+          );
         },
       });
     } else {
@@ -260,9 +283,11 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '105': brightness },
+        dps: { [getDpIdByCode(dpCodes.sceneBright)]: brightness },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '105': brightness }));
+          store.dispatch(
+            actions.common.updateGroupDPs({ [getDpIdByCode(dpCodes.sceneBright)]: brightness })
+          );
         },
       });
     } else {
@@ -276,9 +301,11 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '103': speed },
+        dps: { [getDpIdByCode(dpCodes.sceneSpeed)]: speed },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '103': speed }));
+          store.dispatch(
+            actions.common.updateGroupDPs({ [getDpIdByCode(dpCodes.sceneSpeed)]: speed })
+          );
         },
       });
     } else {
@@ -293,9 +320,11 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '112': loopTimer },
+        dps: { [getDpIdByCode(dpCodes.loopTimer)]: loopTimer },
         success(params) {
-          store.dispatch(actions.common.updateGroupDPs({ '103': loopTimer }));
+          store.dispatch(
+            actions.common.updateGroupDPs({ [getDpIdByCode(dpCodes.loopTimer)]: loopTimer })
+          );
         },
       });
     } else {
@@ -310,7 +339,7 @@ const LoopCollection = props => {
     if (isGroup) {
       publishGroupDps({
         groupId: TYSdk.devInfo.groupId,
-        dps: { '102': isPause },
+        dps: { [getDpIdByCode(dpCodes.isPause)]: isPause },
       });
     } else {
       dpUtils.putDpData({
@@ -351,7 +380,10 @@ const LoopCollection = props => {
   //渲染场景序号
   const renderSceneNumberView = () => {
     return (
-      <View className="sceneNumber-item-wrapper">
+      <View
+        className="sceneNumber-item-wrapper"
+        style={{ maxHeight: `${(itemW + 20) * 4 + itemW / 2 + 20}rpx` }}
+      >
         {sceneNumberArray.map((item, index) => {
           return (
             <View
@@ -389,10 +421,93 @@ const LoopCollection = props => {
     }
   };
 
+  //渲染tipsContent
+  const renderTipsContent = () => {
+    if (!isGroup && !SupportUtils.isSupportDp(dpCodes.isLoop)) {
+      return null;
+    } else {
+      return <Text style={{ marginTop: '20rpx' }}>{Strings.getLang('loop_content_remind')}</Text>;
+    }
+  };
+
+  //渲染循环操作视图
+  const renderLoopOprationView = () => {
+    if (!isGroup && !SupportUtils.isSupportDp(dpCodes.isLoop)) {
+      return null;
+    } else {
+      return (
+        <View className="opration-wrapper">
+          <View
+            className="opration-left-wrapper"
+            onClick={() => {
+              if (isLoop) {
+                return closeTheLoopTips();
+              }
+              collectionButtonClicked();
+            }}
+          >
+            <Text>{Strings.getLang('loop_title_collect')}</Text>
+            <Image
+              src={
+                sceneNumberArray.length > 0 &&
+                currentIndex > -1 &&
+                sceneNumberArray[currentIndex].isCollect
+                  ? collectIcon_s
+                  : collectIcon_n
+              }
+              mode="aspectFit"
+              style={{ marginLeft: '40rpx', width: '40rpx', height: '40rpx' }}
+            ></Image>
+          </View>
+          <View className="opration-right-wrapper">
+            <Text style={{ marginRight: '40rpx' }}>{Strings.getLang('loop_title_loop')}</Text>
+            <Switch
+              checked={isLoop}
+              onChange={e => {
+                setIsLoop(e.value);
+                updateIsLoopStatusDP(e.value);
+                setIsPause(false);
+              }}
+            ></Switch>
+          </View>
+        </View>
+      );
+    }
+  };
+
+  //渲染循环间隔的视图
+  const renderLoopTimeView = () => {
+    if (!isGroup && !SupportUtils.isSupportDp(dpCodes.isLoop)) {
+      return null;
+    } else {
+      return (
+        <View className="lamp-slider-wrap">
+          <View className="titleType-wrapper">
+            <Text>{Strings.getLang('loop_title_timer')}</Text>
+            <Text>{`${Math.ceil(Number(loopTimeValue) / 60)}min`}</Text>
+          </View>
+          <Slider
+            value={Math.ceil(Number(loopTimeValue) / 60)}
+            max={5}
+            min={1}
+            step={1}
+            backgroundColor="#fff"
+            onChange={val => {
+              setLoopTimeValue(val.value * 60);
+              setIsPause(false);
+
+              updateLoopTimerDP(val.value * 60);
+            }}
+          ></Slider>
+        </View>
+      );
+    }
+  };
+
   return (
     <View className="c-width-full collection-wrapper">
       <Text style={{ marginTop: '20rpx' }}>{Strings.getLang('loop_title_more')}</Text>
-      <Text style={{ marginTop: '20rpx' }}>{Strings.getLang('loop_content_remind')}</Text>
+      {renderTipsContent()}
       <View
         className="close-button-wrapper"
         onClick={() => {
@@ -401,46 +516,13 @@ const LoopCollection = props => {
       >
         <Image src={cancelIcon} mode="aspectFit" style={{ width: '50%', height: '50%' }}></Image>
       </View>
-      <View className="opration-wrapper">
-        <View
-          className="opration-left-wrapper"
-          onClick={() => {
-            if (isLoop) {
-              return closeTheLoopTips();
-            }
-            collectionButtonClicked();
-          }}
-        >
-          <Text>{Strings.getLang('loop_title_collect')}</Text>
-          <Image
-            src={
-              sceneNumberArray.length > 0 &&
-              currentIndex > -1 &&
-              sceneNumberArray[currentIndex].isCollect
-                ? collectIcon_s
-                : collectIcon_n
-            }
-            mode="aspectFit"
-            style={{ marginLeft: '40rpx', width: '40rpx', height: '40rpx' }}
-          ></Image>
-        </View>
-        <View className="opration-right-wrapper">
-          <Text style={{ marginRight: '40rpx' }}>{Strings.getLang('loop_title_loop')}</Text>
-          <Switch
-            checked={isLoop}
-            onChange={e => {
-              setIsLoop(e.value);
-              updateIsLoopStatusDP(e.value);
-              setIsPause(false);
-            }}
-          ></Switch>
-        </View>
-      </View>
+
+      {renderLoopOprationView()}
       {renderSceneNumberView()}
 
       <View className="lamp-direction-speed-wraper">
         <View className="lamp-slider-wrap">
-          <View>
+          <View className="titleType-wrapper">
             <Text>{Strings.getLang('scene_speed')}</Text>
           </View>
           <View className="speedSelector-playOrPause-wrapper">
@@ -491,25 +573,7 @@ const LoopCollection = props => {
             }}
           ></Slider>
         </View>
-        <View className="lamp-slider-wrap">
-          <View className="titleType-wrapper">
-            <Text>{Strings.getLang('loop_title_timer')}</Text>
-            <Text>{`${Math.ceil(Number(loopTimeValue) / 60)}min`}</Text>
-          </View>
-          <Slider
-            value={Math.ceil(Number(loopTimeValue) / 60)}
-            max={5}
-            min={1}
-            step={1}
-            backgroundColor="#fff"
-            onChange={val => {
-              setLoopTimeValue(val.value * 60);
-              setIsPause(false);
-
-              updateLoopTimerDP(val.value * 60);
-            }}
-          ></Slider>
-        </View>
+        {renderLoopTimeView()}
       </View>
     </View>
   );
