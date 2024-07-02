@@ -8,8 +8,7 @@ import { store } from '@/redux';
 import './setting.module.less';
 import { hooks } from '@ray-js/panel-sdk';
 import { TYSdk } from '@ray-js/ray-panel-core';
-import { usePageEvent } from 'ray';
-import { publishGroupDps } from '@ray-js/ray';
+import { publishGroupDps, usePageEvent } from '@ray-js/ray';
 
 const { toFixed } = utils;
 const { useDpState } = hooks;

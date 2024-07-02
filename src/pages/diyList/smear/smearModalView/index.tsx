@@ -5,7 +5,7 @@ import { LampStyleSlider } from '@ray-js/components-ty-lamp';
 import Gesture from '@ray-js/gesture';
 
 import DiySmear from '../../../../components/diySmear';
-import { viewWidth, winWidth } from '@ray-js/ray-panel-utils/lib/ratio';
+import { winWidth } from '@ray-js/ray-panel-utils/lib/ratio';
 import './modal.module.less';
 import { ConfigsForPId } from '../../../../config/pId';
 
@@ -52,9 +52,9 @@ const SmearModalView = (props: Props) => {
   );
   var dynamicArrays = props.dynamicData;
   const [dynamicDatas, setDynamicDatas] = React.useState(props.dynamicData);
-  const [selectedHue, setSelectedHue] = React.useState(0); //0-360 颜色slider选中的颜色
+  const [selectedHue, setSelectedHue] = React.useState(0); //0-180 颜色slider选中的颜色
   const [defaultColorIndex, setDefaultColorIndex] = React.useState(-1); //默认颜色下标
-  const defaultColorMap = [0, 24, 60, 120, 180, 240, 300, 510]; // 0-360 510为白色
+  const defaultColorMap = [0, 12, 30, 60, 90, 120, 150, 255]; // 0-180 255为白色
   const [opration, setOpration] = React.useState(1); //1、画笔 2、油漆桶 3、橡皮擦 4、吸色器
   const [showProgress, setShowProgress] = React.useState(false);
   const [progressValue, setProgressValue] = React.useState(0);
@@ -217,25 +217,22 @@ const SmearModalView = (props: Props) => {
 
   //hue 0-360转'rgb()'
   const hueToRGBString = hue => {
-    if (hue === 510) {
+    if (hue === 255) {
       return `rgba(${255},${255},${255})`;
     }
-    if (hue === 46) {
-      return `rgba(${255},${207},${139})`;
-    }
-    const [r, g, b] = hsv2rgb(hue, 100, 100);
+    const [r, g, b] = hsv2rgb(hue * 2, 100, 100);
     return `rgba(${r},${g},${b})`;
   };
 
   //下发同一颜色
   const publishSameHueDP = hue => {
     let hueHex = '';
-    if (hue == 508) {
+    if (hue == 254) {
       hueHex = 'fe';
-    } else if (hue == 510) {
+    } else if (hue == 255) {
       hueHex = 'ff';
     } else {
-      hueHex = toFixed(Math.ceil(hue / 2).toString(16), 2);
+      hueHex = toFixed(Math.min(hue, 180).toString(16), 2);
     }
     const sameHueStr = 'aad601' + hueHex + 'bb';
     dpUtils.putDpData({
@@ -479,24 +476,12 @@ const SmearModalView = (props: Props) => {
                   }}
                   key={index}
                 >
-                  {/* <Image
+                  <Image
                     className="opration-icon"
+                    mode="aspectFit"
                     src={thumbData.thumbImage}
                     style={{ width: thumbImageItemW * 2 - 20, height: thumbImageItemW * 2 - 20 }}
-                  ></Image> */}
-                  <DiySmear
-                    pixelData={thumbData.box}
-                    width={((thumbImageItemW - 2 * 2) / Math.max(list, row)) * list}
-                    height={((thumbImageItemW - 2 * 2) / Math.max(list, row)) * row}
-                    pixelSize={(thumbImageItemW - 2 * 2) / Math.max(list, row)}
-                    elementWidth={`${(thumbImageItemW - 5) * 2}rpx`}
-                    elementHeight={`${(thumbImageItemW - 5) * 2}rpx`}
-                    elementPadding={'1px'}
-                    showType={0}
-                    pixelColor={'rgb(67,68,71)'}
-                    canvasId={`thumb_${index}`}
-                    isDynamic={false} //涂抹的时候都是只传单帧过去，不存在动态一说
-                  ></DiySmear>
+                  ></Image>
                 </View>
               </Gesture>
             );
@@ -544,20 +529,12 @@ const SmearModalView = (props: Props) => {
                       thumbImageViewClicked(index);
                     }}
                   >
-                    <DiySmear
-                      pixelData={thumbData.box}
-                      width={((scrollViewItemW - 2 * 2) / Math.max(list, row)) * list}
-                      height={((scrollViewItemW - 2 * 2) / Math.max(list, row)) * row}
-                      pixelSize={(scrollViewItemW - 2 * 2) / Math.max(list, row)}
-                      elementWidth={`${(scrollViewItemW - 5) * 2}rpx`}
-                      elementHeight={`${(scrollViewItemW - 5) * 2}rpx`}
-                      elementPadding={'2px'}
-                      showType={0}
-                      animationType={'static'}
-                      pixelColor={'rgb(67,68,71)'}
-                      canvasId={`thumb_${index}`}
-                      isDynamic={false} //涂抹的时候都是只传单帧过去，不存在动态一说
-                    ></DiySmear>
+                    <Image
+                      className="opration-icon"
+                      src={thumbData.thumbImage}
+                      mode="aspectFit"
+                      style={{ width: thumbImageItemW * 2 - 20, height: thumbImageItemW * 2 - 20 }}
+                    ></Image>
                   </Gesture>
                 </View>
               );
@@ -670,52 +647,52 @@ const SmearModalView = (props: Props) => {
         elementHeight={'750rpx'}
         elementPadding={'10px'}
         showType={1}
+        isCurrentSwiperItem={true}
         pixelColor={'rgb(67,68,71)'}
         selectedColorHue={selectedHue}
         canvasId={'smearModal'}
         isDynamic={false} //涂抹的时候都是只传单帧过去，不存在动态一说
         bindclearCavasEvent={() => {
           //清除画板
-          publishSameHueDP(508);
+          publishSameHueDP(254);
           setPiexlData([]);
         }}
         bindoprationChanged={e => {
           setOpration(e.detail);
         }}
-        bindsmearChanged={result => {
+        bindgetBoxData={result => {
           if (props.isDynamic) {
             dynamicArrays[thumbDataIndex].box = result.detail.box;
             props.refrshShowPiexlData(dynamicArrays);
           } else {
             props.refrshShowPiexlData(result.detail.box);
           }
-          if (result.detail.idx === -1) {
-            //-1初始化时候回调，其余为画到的某个点的下标
-          } else {
-            // publishOnePiexlDP(result.detail.idx, result.detail.box[result.detail.idx].fillStyle);
-            let isHave: boolean = false;
-            sendPiexlArray.forEach((piexl, index) => {
-              if (piexl.number == result.detail.idx) {
-                isHave = true;
-                sendPiexlArray[index] = {
-                  number: result.detail.idx,
-                  color: result.detail.box[result.detail.idx].fillStyle,
-                };
-                return;
-              }
-            });
-            if (!isHave) {
-              sendPiexlArray.push({
-                number: result.detail.idx,
-                color: result.detail.box[result.detail.idx].fillStyle,
-              });
+        }}
+        bindsmearChanged={result => {
+          const idx = result.detail.idx;
+          const color = result.detail.color;
+          let isHave: boolean = false;
+          sendPiexlArray.forEach((piexl, index) => {
+            if (piexl.number == result.detail.idx) {
+              isHave = true;
+              sendPiexlArray[index] = {
+                number: idx,
+                color: color,
+              };
+              return;
             }
+          });
+          if (!isHave) {
+            sendPiexlArray.push({
+              number: idx,
+              color: color,
+            });
           }
         }}
         bindgetThumbImage={result => {
           if (props.isDynamic) {
             //获取的图片为
-            // dynamicArrays[thumbDataIndex].thumbImage = result.detail;
+            dynamicArrays[thumbDataIndex].thumbImage = result.detail;
 
             setDynamicDatas([...dynamicArrays]);
           } else {
@@ -736,45 +713,28 @@ const SmearModalView = (props: Props) => {
       ></DiySmear>
       {props.isDynamic ? renderThumbImage() : null}
       <View className="colorSlider-wrapper">
-        {/* <LampColorSlider
-          trackStyle={{
-            height: '25px',
-            width: `${viewWidth - 40}px`,
-          }}
-          thumbStyle={{ height: '29px', background: hueToRGBString(selectedHue) }}
-          value={selectedHue}
-          onTouchEnd={hueValue => {
-            setDefaultColorIndex(-1);
-
-            setSelectedHue(hueValue);
-
-            if (opration === 2) {
-              publishSameHueDP(hueValue);
-            }
-          }}
-        ></LampColorSlider> */}
         <LampStyleSlider
           trackStyle={{
             height: '50rpx',
             width: `${(375 - 40) * 2}rpx`,
             borderRadius: '20rpx',
             background: `linear-gradient(to right,${hueToRGBString(0)},${hueToRGBString(
-              36
-            )},${hueToRGBString(72)},${hueToRGBString(108)},${hueToRGBString(144)},${hueToRGBString(
-              180
-            )},${hueToRGBString(216)},${hueToRGBString(252)},${hueToRGBString(
-              288
-            )},${hueToRGBString(324)},${hueToRGBString(360)} 97%,#fff 97%, #fff 100%)`,
+              18
+            )},${hueToRGBString(36)},${hueToRGBString(54)},${hueToRGBString(72)},${hueToRGBString(
+              90
+            )},${hueToRGBString(108)},${hueToRGBString(126)},${hueToRGBString(
+              144
+            )},${hueToRGBString(162)},${hueToRGBString(180)} 97%,#fff 97%, #fff 100%)`,
           }}
-          rangeOffset={20}
+          // rangeOffset={20}
           thumbStyle={{ height: '58rpx', width: '30rpx', borderRadius: '15rpx' }}
           value={selectedHue}
           min={0}
-          max={370}
+          max={185}
           onTouchEnd={hueValue => {
             setDefaultColorIndex(-1);
-            if (hueValue > 360) {
-              setSelectedHue(510);
+            if (hueValue > 182) {
+              setSelectedHue(255);
             } else {
               setSelectedHue(hueValue);
             }

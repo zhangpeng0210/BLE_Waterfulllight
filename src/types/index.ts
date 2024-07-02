@@ -37,3 +37,33 @@ export type TimerData = {
   isEnabled?: boolean; //定时是否开启
 
 }
+
+//设备的属性(命令0x00通过dp点“diy”获取)
+export type DeviceInfoModel = {
+  /*设备DIY的类型 
+  0、线条分段类型 
+  1、线条点控制类型 方向 静态:（左,右,左循环,,右循环,闪烁,固定,呼吸） 动态（呼吸,闪烁) 
+  2、不支持DIY 
+  3、面型矩阵DIY 方向 静态:（上,下,上循环,下循环，左,右,左循环,,右循环,闪烁,固定,呼吸） 动态（呼吸,闪烁)
+  4、异型DIY（如仿真圣诞树、地插灯）
+  5、新型线型DIY(如新型瀑布灯-一个灯珠带表一整条灯)
+  */
+  diyType?: number; 
+  //收藏弹窗里边的场景总数量
+  sceneAmount?: number;
+  //灯总数
+  lightAmount?: number;
+  //单条灯数
+  singleNum?: number;
+  //条数、列数 = 总灯数 / 单灯数
+  columnNum?: number;
+}
+
+//diy的数据
+export type DiyData = {
+  listId?: string;
+  showType?: number;//显示类型 1单图 2多图 3预设场景
+  speed?: number; //速度 1- 100
+  brightness?: number; //亮度 1- 100
+  
+}

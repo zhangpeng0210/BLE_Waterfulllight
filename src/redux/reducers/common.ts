@@ -25,6 +25,8 @@ const {
   toggleShowModel,
   updatePanel,
   updateGroupDPs,
+  updateDevOrderInfo,
+  updateSelectedData,
 } = actions;
 
 export type Actions = { [K in keyof typeof actions]: ReturnType<typeof actions[K]> };
@@ -131,6 +133,35 @@ const devInfo = handleActions(
       ...state,
       ...action.payload,
     }),
+  },
+  {}
+);
+
+//设备通过命令0x00获取到的设备信息
+const devOrderInfo = handleActions(
+  {
+    [updateDevOrderInfo.toString()]: (state,action: Actions['updateDevOrderInfo']) => {
+      return {
+        ...state,
+        ...action.payload,
+      };
+    },
+  },{}
+);
+
+const selectedData = handleActions(
+  {
+    [updateSelectedData.toString()]: (state, action: Actions['updateSelectedData']) => {
+      if (Object.keys(action.payload).length == 0) {
+        //更新一个{}时表示想把该state置空
+        return {}
+      }else {
+        return {
+          ...state,
+          ...action.payload,
+        };    
+      }
+    },
   },
   {}
 );
@@ -253,4 +284,6 @@ export const reducers = {
   logs,
   showModal,
   groupDPs,
+  devOrderInfo,
+  selectedData,
 };

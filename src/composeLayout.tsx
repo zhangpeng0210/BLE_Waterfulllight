@@ -10,6 +10,7 @@ import React, { Component } from 'react';
 import { connect, Provider } from 'react-redux';
 import { TYSdk } from '@ray-js/ray-panel-core';
 import { Strings } from '@ray-js/ray-panel-i18n';
+import String from '@/i18n';
 import { Theme } from '@ray-js/ray-panel-theme';
 import { JsonUtils } from '@ray-js/ray-panel-utils';
 import { CloudConfig, Config, withConfig } from '@ray-js/ray-panel-standard-hoc';
@@ -21,8 +22,9 @@ import {
   registerDeviceListListener,
   onBLEConnectStatusChange,
   subscribeBLEConnectStatus,
+  getBLEOnlineState,
 } from '@ray-js/api';
-import { onGroupDpCodeChange, onGroupDpDataChangeEvent, registerGroupChange } from '@ray-js/ray';
+import { onGroupDpDataChangeEvent, registerGroupChange } from '@ray-js/ray';
 import { toFixed } from '@ray-js/panel-sdk/lib/utils';
 import { dpUtils } from '@/redux/index';
 import dpCodes from '@/config/dpCodes';
@@ -158,6 +160,24 @@ const composeLayout = (Comp: React.ComponentType<any>) => {
         });
       },
       fail: () => console.warn('subscribeDeviceRemoved 调用失败'),
+    });
+
+    getBLEOnlineState({
+      deviceId: devId,
+      success(params) {
+        if (params.isOnline) {
+        } else {
+          ty.showModal({
+            title: String.getLang('当前蓝牙设备未连接'),
+            showCancel: false,
+            confirmText: 'OK',
+            success(params) {
+              // 退出小程序容器
+              exitMiniProgram();
+            },
+          });
+        }
+      },
     });
 
     try {

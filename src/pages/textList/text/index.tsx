@@ -10,11 +10,10 @@ import InputView from './inputTextView/index';
 import { utils } from '@ray-js/panel-sdk';
 import Gesture from '@ray-js/gesture';
 import { TYSdk } from '@ray-js/ray-panel-core';
-import { usePageEvent } from 'ray';
+import { usePageEvent } from '@ray-js/ray';
 import { dpUtils } from '@/redux/index';
 import dpCodes from '@/config/dpCodes';
-import { setNavigationBarTitle } from '@ray-js/api';
-import { getCurrentPages } from '@ray-js/api';
+import { setNavigationBarTitle, getCurrentPages } from '@ray-js/api';
 import { hooks } from '@ray-js/panel-sdk';
 const { useDpState } = hooks;
 
@@ -57,7 +56,7 @@ const TextView = () => {
   const [colorIndex, setColorIndex] = useState(0); //编辑时选中的第几个渐变色
   const [memberColors, setMemberColors] = useState([]);
   const [thumbImage, setThumbImage] = useState();
-  const [isCapture, setIsCapture] = useState(false);
+  const [isCapture, setIsCapture] = useState(false); //保存时复位截图
   const [workMode] = useDpState(dpCodes.workMode);
 
   const animationTypeMap = [
@@ -217,6 +216,7 @@ const TextView = () => {
     }
     const textParmterDPStr =
       'aad3' + lengthStr + animateStr + brightnessStr + speedStr + bgColorStr + textColorStr + 'bb';
+    console.log('111111111111111111', animateStr);
     dpUtils.putDpData({
       [dpCodes.DIY]: textParmterDPStr,
     });

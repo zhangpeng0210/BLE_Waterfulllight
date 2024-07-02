@@ -10,5 +10,6 @@
     "DeviceKit": "3.2.0",
     "BizKit": "3.1.1"
   },
-  "baseversion": "2.15.7"
+  "baseversion": "2.15.7",
+  "compileType": "miniprogram"
 }

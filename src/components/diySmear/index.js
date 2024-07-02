@@ -28,7 +28,7 @@ Component({
     },
     elementPadding: {
       type: String,
-      value: '2rpx',
+      value: '20rpx',
     },
     pixelSize: {
       type: Number,
@@ -56,7 +56,7 @@ Component({
     },
     showType: {
       type: Number,
-      value: 0, //展示类型 0，仅展示，不允许涂抹 1、可以涂抹
+      value: 0, //展示类型 0，仅展示，不允许涂抹 1、可以涂抹 2、像素画
     },
     canvasId: {
       type: String,
@@ -114,47 +114,36 @@ Component({
         isPause: this.data.isPause,
         isDynamic: this.data.isDynamic,
       });
+
+      if (this.data.isCurrentSwiperItem && !this.data.isPause) {
+        this.render.startTimer(this.data.animationType, this.data.interval);
+      } else {
+        this.render.endTimer();
+      }
     },
   },
   observers: {
     pixelData: function(newVal) {
-      if (this.isReady) {
-        this.render.initPanel({
-          width: this.data.width,
-          height: this.data.height,
-          pixelSize: this.data.pixelSize,
-          pixelShape: this.data.pixelShape,
-          pixelColor: this.data.pixelColor,
-          pixelGap: this.data.pixelGap,
-          pixelData: newVal,
-          showType: this.data.showType,
-          canvasId: this.data.canvasId,
-          absoluteScale: this.data.absoluteScale,
-          interval: this.data.interval,
-          isPause: this.data.isPause,
-          isDynamic: this.data.isDynamic,
-        });
-        this.render.resetPiexl(); //先复位
-      }
+      if (
+        !this.isReady ||
+        !Array.isArray(newVal) ||
+        !this.data.isCurrentSwiperItem ||
+        this.data.showType == 2
+      )
+        return;
+      this.render.updatePixelData(newVal);
+      this.render.resetPiexl(); //先复位
     },
     dynamicData: function(newVal) {
-      if (this.isReady)
-        this.render.initPanel({
-          width: this.data.width,
-          height: this.data.height,
-          pixelSize: this.data.pixelSize,
-          pixelShape: this.data.pixelShape,
-          pixelColor: this.data.pixelColor,
-          pixelGap: this.data.pixelGap,
-          dynamicData: newVal,
-          showType: this.data.showType,
-          canvasId: this.data.canvasId,
-          absoluteScale: this.data.absoluteScale,
-          interval: this.data.interval,
-          isPause: this.data.isPause,
-          isDynamic: this.data.isDynamic,
-        });
-
+      if (
+        !this.isReady ||
+        !Array.isArray(newVal) ||
+        newVal.length === 0 ||
+        !this.data.isCurrentSwiperItem ||
+        this.data.showType == 2
+      )
+        return;
+      this.render.updateDynamicData(newVal);
       this.checkIsNeedStartTimer();
     },
     animationType: function(newValue) {
@@ -171,32 +160,17 @@ Component({
       this.checkIsNeedStartTimer();
     },
     isDynamic: function(newValue) {
-      if (this.isReady)
-        this.render.initPanel({
-          width: this.data.width,
-          height: this.data.height,
-          pixelSize: this.data.pixelSize,
-          pixelShape: this.data.pixelShape,
-          pixelColor: this.data.pixelColor,
-          pixelGap: this.data.pixelGap,
-          pixelData: this.data.pixelData,
-          dynamicData: this.data.dynamicData,
-          showType: this.data.showType,
-          canvasId: this.data.canvasId,
-          absoluteScale: this.data.absoluteScale,
-          interval: this.data.interval,
-          isPause: this.data.isPause,
-          isDynamic: this.data.isDynamic,
-        });
-
-      this.checkIsNeedStartTimer();
+      if (this.isReady && this.data.isCurrentSwiperItem && this.data.showType == 0) {
+        this.render.updateIsDynamic(newValue);
+        this.checkIsNeedStartTimer();
+      }
     },
     selectedColorHue: function(hueValue) {
-      const rgb = hslToRgb(hueValue, 1, 0.5);
       let rgbStr = '';
-      if (hueValue == 510) {
+      if (hueValue == 255) {
         rgbStr = 'rgb(255,255,255)';
       } else {
+        const rgb = hslToRgb(hueValue * 2, 1, 0.5);
         rgbStr = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
       }
       this.render.updateColor(rgbStr);
@@ -328,10 +302,15 @@ Component({
       }
     },
 
-    //回调方法
+    //初始化时候回调点数组
     getBoxData(box, idx) {
-      this.triggerEvent('smearChanged', { box: box, idx: idx });
+      this.triggerEvent('getBoxData', { box: box });
       this.data.pixelData = box;
+    },
+
+    //涂抹时回调点信息(颜色，下标)
+    smearChanged(color, idx) {
+      this.triggerEvent('smearChanged', { color: color, idx: idx });
     },
 
     //吸色器洗到颜色
@@ -361,12 +340,21 @@ Component({
     },
     //验证是否需要开启动画
     checkIsNeedStartTimer() {
-      if (this.isReady)
+      console.log('2222222222222222', this.isReady);
+
+      if (this.isReady) {
+        console.log(
+          '11111111111111',
+          this.data.isCurrentSwiperItem,
+          !this.data.isPause,
+          this.data.animationType
+        );
         if (this.data.isCurrentSwiperItem && !this.data.isPause) {
           this.render.startTimer(this.data.animationType, this.data.interval);
         } else {
           this.render.endTimer();
         }
+      }
     },
   },
 });

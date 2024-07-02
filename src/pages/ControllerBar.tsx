@@ -31,7 +31,6 @@ const ControllerBar = (props: Props) => {
   };
 
   const { active, power, data = [] } = props;
-  console.log('comtrollerprops', props);
   return (
     <View className="controller-bar c-flex-around-center c-fixed c-bottom0">
       {power !== undefined && (

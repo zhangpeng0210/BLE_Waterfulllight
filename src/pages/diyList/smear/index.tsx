@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, Slider, Modal, Image, PageContainer, Icon, Button } from '@ray-js/components';
-import { usePageEvent } from '@ray-js/ray';
+import { View, Text, Slider, Image, PageContainer, Icon } from '@ray-js/components';
+import {
+  usePageEvent,
+  getFileSystemManager,
+  env,
+  authorize,
+  authorizeStatus,
+  showModal,
+} from '@ray-js/ray';
 import Strings from '@/i18n';
 import { utils } from '@ray-js/panel-sdk';
 const { parseJSON } = utils;
@@ -14,7 +21,7 @@ import * as imageSrcType from './module';
 import dpCodes from '@/config/dpCodes';
 import { dpUtils } from '@/redux/index';
 import { TYSdk } from '@ray-js/ray-panel-core';
-import { getCurrentPages } from '@ray-js/api';
+import { hideLoading } from '@ray-js/api';
 import { hooks } from '@ray-js/panel-sdk';
 const { useDpState } = hooks;
 
@@ -26,6 +33,11 @@ var props;
 var thumbDataIndex = 0;
 
 const SmearView = () => {
+  const { devId } = TYSdk.devInfo;
+  const fileRoot = env.USER_DATA_PATH;
+  const folderPath = `${fileRoot}/diyList_${devId}`;
+  const allKeysPath = `${folderPath}/allKeysPath.text`;
+
   const {
     row,
     list,
@@ -33,17 +45,24 @@ const SmearView = () => {
     staticAnimationTypeList,
   } = ConfigsForPId.getCanvasParameter();
 
-  usePageEvent('onLoad', res => {
-    ty.hideMenuButton();
+  const fileManager = React.useRef(null);
 
-    props = res;
-    ty.getStorage({
-      key: props.key,
-      success(params) {
-        const diyData = (parseJSON(params.data) as unknown) as any;
-        if (params.data != null) {
-          //有数据 是编辑
+  React.useEffect(() => {
+    const getMenager = async () => {
+      fileManager.current = await getFileSystemManager();
+    };
+    getMenager().then(() => {
+      const path = `${folderPath}/${props.key}.text`;
+      console.log('1111111111111111', fileManager.current);
+
+      fileManager.current.access({
+        path: path,
+        success() {
+          //存在、是编辑
           setIsAdd(false);
+
+          const { data } = fileManager.current.readFileSync({ filePath: path });
+          const diyData = (parseJSON(data) as unknown) as any;
           if (diyData.isDynamic) {
             setIsDynamic(true);
 
@@ -86,15 +105,146 @@ const SmearView = () => {
             setSpeed(diyData.speed);
             setStaticThumbImage(diyData.thumbImage);
           }
-        } else {
+          setIsPause(false);
+        },
+        fail(error) {
+          //不存在
           //没数据 是新增
           setIsAdd(true);
           //展示静态
           exchangeStatus({ status: 1 });
-        }
+        },
+      });
+    });
+  }, []);
+
+  //申请相册权限
+  const applyWriteScope = callBack => {
+    authorize({
+      scope: 'scope.writePhotosAlbum',
+      success() {
+        //查看写入相册的权限
+        console.log('申请权限成功1-1');
+        queryWriteScope(callBack);
+      },
+      fail: err => {
+        //拒绝了相册权限
+        hideLoading();
+        showModal({ title: '保存DIY数据需要有相册写入权限' });
       },
     });
+  };
 
+  //2、查看相册写入权限
+  const queryWriteScope = callBack => {
+    authorizeStatus({
+      scope: 'scope.writePhotosAlbum',
+      success(params) {
+        //有相册写入权限
+        console.log('有相册写入权限2-1');
+        //3、查看文件夹是否存在
+        folderIsExist(folderPath, callBack);
+      },
+      fail(err) {
+        //没有相册写入权限
+        ty.hideLoading();
+        showModal({ title: '请开启”智能生活“的相册权限' });
+      },
+    });
+  };
+
+  //判断文件夹是否存在，如果不存在则新建
+  const folderIsExist = (path, callBack) => {
+    fileManager.current.access({
+      path: path,
+      success: () => {
+        //3-1 文件夹已经存在
+        console.log('~/diyList文件夹存在3-1');
+        callBack();
+      },
+      fail: err => {
+        //3-2文件夹不存在就新建
+        console.log('~/diyList文件夹不存在3-2', err);
+
+        //新建diyList的文件夹
+        fileManager.current.mkdir({
+          dirPath: folderPath,
+          success(params) {
+            //新建文件夹成功
+            callBack();
+          },
+          fail(err) {
+            hideLoading();
+            showModal({ title: `创建diy列表失败，请稍后重试` });
+          },
+        });
+      },
+    });
+  };
+
+  // 写入文件 type = 1、写单个DIY的数据 2、保存keys
+  const writeDataToFile = (type, jsonStr, path) => {
+    fileManager.current.writeFile({
+      filePath: path,
+      data: jsonStr,
+      success: () => {
+        if (type == 1) {
+          //保存单个DIY数据成功
+          //读取存储key的文件
+          fileManager.current.access({
+            path: allKeysPath,
+            success() {
+              //allKeysPath存在
+              //读取存储key的文件
+              const { data } = fileManager.current.readFileSync({ filePath: allKeysPath });
+              let allkeysArray = (parseJSON(data) as unknown) as Array<string>;
+
+              console.log('所有key的数组为', allkeysArray);
+
+              if (allkeysArray.includes(props.key)) {
+                //包含key，是编辑
+                ty.hideLoading();
+                ty.navigateBack();
+              } else {
+                //不包含，把key加进allkeysArray并存储
+                console.log('需要添加的key为', props.key);
+                allkeysArray.push(props.key);
+                console.log('不包含，需要存储的新的allkeys', allkeysArray);
+                writeDataToFile(2, JSON.stringify(allkeysArray), allKeysPath);
+              }
+            },
+            fail(err) {
+              const newAllkeys = [props.key];
+              console.log('allKeysPath不存在，新建', newAllkeys);
+              writeDataToFile(2, JSON.stringify(newAllkeys), allKeysPath);
+            },
+          });
+        } else {
+          //保存所有的keys成功
+          console.log('保存所有的keys成功', jsonStr);
+
+          ty.hideLoading();
+
+          ty.navigateBack();
+        }
+      },
+      fail: err => {
+        ty.hideLoading();
+        let tipTitle = '';
+        if (type == 2) {
+          tipTitle = 'allkeys写入文件失败';
+        } else {
+          tipTitle = 'diyData写入文件失败';
+        }
+        console.log(err, path);
+        showModal({ title: `${tipTitle}，请稍后重试` });
+      },
+    });
+  };
+
+  usePageEvent('onLoad', res => {
+    ty.hideMenuButton();
+    props = res;
     piexlArray = [];
     dynamicArray = [];
     getNavgationH;
@@ -219,6 +369,8 @@ const SmearView = () => {
 
       return;
     }
+    ty.showLoading({ title: 'loading...' });
+
     let diyData = {
       isDynamic: isDynamic,
       direction: isDynamic ? dynamicAnimationIndex : staticAnimationIndex,
@@ -252,61 +404,19 @@ const SmearView = () => {
         });
         return thumbData;
       }),
-      // thumbImage: staticThumbImage,
+      thumbImage: staticThumbImage,
       key: props.key,
     };
     //先保存单个DIY数据
-    ty.setStorage({
-      key: props.key,
-      data: JSON.stringify(diyData),
-      success(params) {
-        ty.getStorage({
-          key: `DIYList_${TYSdk.devInfo.devId}`,
-          success(params) {
-            let allKeys = (parseJSON(params.data) as unknown) as Array<string>;
-            if (allKeys === null) {
-              allKeys = [];
-            }
-            if (
-              //是编辑
-              allKeys.some(item => {
-                return item === props.key;
-              })
-            ) {
-              //返回
-              ty.navigateBack();
-            } else {
-              //新增
-              allKeys.push(props.key);
-              ty.setStorage({
-                key: `DIYList_${TYSdk.devInfo.devId}`,
-                data: JSON.stringify(allKeys),
-              });
-            }
-            saveCurrentDIYKey(props.key);
-          },
-        });
-      },
-      fail(params) {
-        ty.showToast({
-          title: params.errorMsg,
-          icon: 'none',
-          mask: true,
-        });
-      },
+    //1、先申请相册权限
+    applyWriteScope(() => {
+      //最后能走到回调的说明相册读写权限有了、diyList也已经有了
+      const diyPath = `${folderPath}/${props.key}.text`;
+
+      writeDataToFile(1, JSON.stringify(diyData), diyPath);
     });
   };
 
-  //保存当前播放的DIY的key
-  const saveCurrentDIYKey = key => {
-    let pages = getCurrentPages();
-    let prePages = pages[pages.length - 2]; //当前页面
-    prePages.setData({
-      selectedKey: key,
-      isSave: true,
-    });
-    ty.navigateBack();
-  };
   //修改场景速度
   const updateSceneSpeed = speed => {
     dpUtils.putDpData({

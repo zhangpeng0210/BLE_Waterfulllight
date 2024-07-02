@@ -25,6 +25,10 @@ const consoleChange = createAction('CONSOLECHNAGE');
 const clearConsole = createAction('CLEARCONSOLE');
 //群组dp更新
 const updateGroupDPs = createAction('UPDATA_GROUP_DPS');
+//设备的命令0x00的信息
+const updateDevOrderInfo = createAction('UPDATA_DEV_ORDERINFO');
+//选中某个场景id或者diy的key
+const updateSelectedData = createAction('UPDATE_SELECTEDDATA');
 
 // 弹出事件弹框
 const toggleShowModel = createAction('TOGGLE_SHOW_MODEL');
@@ -48,4 +52,6 @@ export const actions = {
   clearConsole,
   toggleShowModel,
   updateGroupDPs,
+  updateDevOrderInfo,
+  updateSelectedData,
 };

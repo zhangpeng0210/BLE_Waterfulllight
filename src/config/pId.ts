@@ -4,11 +4,17 @@ import dpCodes from '@/config/dpCodes';
 import scenePiexlData_016 from '../res/scenePiexlData_016';
 import * as imageSrcType from '../pages/diyList/smear/module';
 
+import { store } from '@/redux';
+import { DeviceInfoModel } from '@/types';
+
 //根据不同的pid设置items
 const getHomeItems = () => {
   const isGroup = !(TYSdk.devInfo.groupId === undefined);
   const pid = TYSdk.devInfo.state[dpCodes.pid];
-  console.log('pid = ', pid);
+  const state = store.getState();
+  // 使用类型断言来告诉 TypeScript 我们知道 devOrderInfo 的确切类型
+  const devOrderInfo: DeviceInfoModel = state.devOrderInfo as DeviceInfoModel;
+
   let scenesList = [];
   let sceneAmount = 30;
   if (isGroup) {
@@ -35,6 +41,11 @@ const getHomeItems = () => {
     }
   }
   scenesList.push({ itemType: 'collection', icon: itemIcon.homeItemIcon_collection });
+ 
+  if (devOrderInfo.sceneAmount > 0) {
+    sceneAmount = devOrderInfo.sceneAmount;
+  }
+
   return { scenesList, sceneAmount };
 };
 
@@ -42,6 +53,10 @@ const getHomeItems = () => {
 const getCanvasParameter = () => {
   const isGroup = !(TYSdk.devInfo.groupId === undefined);
   const pid = TYSdk.devInfo.state[dpCodes.pid];
+  const state = store.getState();
+  // 使用类型断言来告诉 TypeScript 我们知道 devOrderInfo 的确切类型
+  const devOrderInfo: DeviceInfoModel = state.devOrderInfo as DeviceInfoModel;
+
   let staticAnimationTypeList = [
     {
       normal: imageSrcType.up_n,
@@ -137,6 +152,11 @@ const getCanvasParameter = () => {
       list = 9;
       break;
   }
+  if (devOrderInfo.singleNum > 0 && devOrderInfo.columnNum > 0) {
+    row = devOrderInfo.singleNum;
+    list = devOrderInfo.columnNum;
+  }
+
   return { row, list, dynamicAnimationTypeList, staticAnimationTypeList };
 };
 

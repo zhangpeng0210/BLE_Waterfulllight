@@ -32,4 +32,8 @@ export default {
   loopTimer: 'scene_auto_interval', //收藏循环间隔 单位秒 1-1000
   loopNumbers: 'scene_auto_group_str',//已收藏的场景的序号组成的字符串
   treeStarStatus: 'top_star_ctrl', //static静止 follow跟随 off关闭
+
+  brightLevel:'gain', //亮度增益、等级 
+  maxMacAddress:'max_addr', //设置地址码 1-200
+
 };

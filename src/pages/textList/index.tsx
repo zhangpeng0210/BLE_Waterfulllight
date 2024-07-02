@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { View, ScrollView, Image, Slider } from '@ray-js/components';
-import { hideLoading, setNavigationBarTitle, showLoading } from '@ray-js/api';
+import React, { useState, useEffect } from 'react';
+import { View, Image, Slider } from '@ray-js/components';
+import { setNavigationBarTitle } from '@ray-js/api';
 import { TYSdk } from '@ray-js/ray-panel-core';
 import './textList.module.less';
 import * as textSceneIcon from './module';
@@ -9,11 +9,10 @@ import editIcon from '../res/button_edit.png';
 import addIcon from '../res/icon-add.png';
 import { showToast, navigateTo, showModal } from '@ray-js/api';
 import { utils } from '@ray-js/panel-sdk';
-import { usePageEvent } from 'ray';
+import { usePageEvent } from '@ray-js/ray';
 import { dpUtils } from '@/redux/index';
 import dpCodes from '@/config/dpCodes';
 import Strings from '@/i18n';
-import { getCurrentPages } from '@ray-js/api';
 import { hooks } from '@ray-js/panel-sdk';
 const { useDpState } = hooks;
 
@@ -25,7 +24,7 @@ const TextListView = () => {
   const [textList, setTextList] = useState([]);
   const [currentKey, setCurrentKey] = useState('');
   const [textListKeys, setTextListKeys] = useState([]);
-  const [brightnessValue, setBrightnessValue] = useDpState(dpCodes.sceneBright);
+  const [brightnessValue] = useDpState(dpCodes.sceneBright);
   const [workMode] = useDpState(dpCodes.workMode);
 
   usePageEvent('onLoad', () => {
@@ -284,7 +283,7 @@ const TextListView = () => {
   //                方向 //亮度  //速度 //背景色
   //[0xaa,0xd3,0x04,0x01,0x02, 0x03,  0x04, 0x05,0xbb]
   const setTextParmterDP = item => {
-    const directions = ['04', '03', '02', '01', '05', '00'];
+    const directions = ['00', '01', '02', '03', '04', '05'];
     const animateStr = item === null ? '00' : directions[item.direction];
     const brightnessStr = item === null ? '64' : toFixed(brightnessValue.toString(16), 2);
     const speedStr = item === null ? '64' : toFixed(item.speed.toString(16), 2);
@@ -341,18 +340,6 @@ const TextListView = () => {
     dpUtils.putDpData({
       [dpCodes.sceneBright]: brightness,
     });
-  };
-
-  //渲染一行的item
-  const renderItemRow = (number, index) => {
-    const leftItem = textList[number];
-    const rightItem = textList[number + 1];
-    return (
-      <View key={number} className="c-flex-center diyList-home-row-wrapper">
-        {leftItem && renderItem(leftItem, number)}
-        {rightItem && renderItem(rightItem, number + 1)}
-      </View>
-    );
   };
 
   //渲染单个item
@@ -429,19 +416,20 @@ const TextListView = () => {
 
   return (
     <View className="c-width-full textList-home-wrapper">
-      <Slider
-        value={brightnessValue}
-        max={100}
-        min={20}
-        step={1}
-        backgroundColor="#fff"
-        onChange={val => {
-          setBrightnessValue(val.value);
-          //下发亮度
-          updateSceneBrightnessDP(val.value);
-        }}
-        style={{ height: '80rpx' }}
-      ></Slider>
+      <View className="slider-wrapper">
+        <Slider
+          value={brightnessValue}
+          max={100}
+          min={20}
+          step={1}
+          backgroundColor="#fff"
+          onChange={val => {
+            //下发亮度
+            updateSceneBrightnessDP(val.value);
+          }}
+          style={{ height: '80rpx' }}
+        ></Slider>
+      </View>
       <View className="textList-home-itemBg-wrapper">
         {textList.map(renderItem)}
 
@@ -450,8 +438,8 @@ const TextListView = () => {
             <Image
               src={addIcon}
               style={{
-                height: '36rpx',
-                width: '36rpx',
+                height: '100%',
+                width: '100%',
               }}
             ></Image>
           </View>
